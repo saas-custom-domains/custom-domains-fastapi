@@ -4,14 +4,26 @@ All of these live on your own hostnames (APP_HOSTS)."""
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response
+from fastapi import (
+    APIRouter,
+    Depends,
+    Form,
+    HTTPException,
+    Request,
+    Response,
+)
 from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
 from app import domain_service
 from app.db import SessionDep
-from app.hosts import is_reserved_host, is_valid_host, normalize_host, secure_compare
+from app.hosts import (
+    is_reserved_host,
+    is_valid_host,
+    normalize_host,
+    secure_compare,
+)
 from app.models import CustomDomain, DomainStatus, Tenant
 from app.settings import settings
 from app.templating import templates
@@ -31,11 +43,17 @@ def render_dashboard(
     status_code: int = 200,
 ) -> HTMLResponse:
     tenants = session.exec(select(Tenant).order_by(Tenant.id)).all()
-    domains = session.exec(select(CustomDomain).order_by(CustomDomain.id)).all()
+    domains = session.exec(
+        select(CustomDomain).order_by(CustomDomain.id)
+    ).all()
     return templates.TemplateResponse(
         request,
         "dashboard.html",
-        {"tenants": tenants, "domains": domains, "errors": errors or {}},
+        {
+            "tenants": tenants,
+            "domains": domains,
+            "errors": errors or {},
+        },
         status_code=status_code,
     )
 
@@ -70,8 +88,12 @@ async def add_domain(
             log.exception("Could not add %s", host)
             error = "Could not add the domain. Try again."
     if error:
-        return render_dashboard(request, session, {tenant_id: error}, 400)
-    return RedirectResponse(router.url_path_for("dashboard"), status_code=303)
+        return render_dashboard(
+            request, session, {tenant_id: error}, 400
+        )
+    return RedirectResponse(
+        router.url_path_for("dashboard"), status_code=303
+    )
 
 
 def get_domain(domain_id: int, session: SessionDep) -> CustomDomain:
@@ -87,13 +109,17 @@ DomainDep = Annotated[CustomDomain, Depends(get_domain)]
 @router.post("/domains/{domain_id}/check")
 async def check_domain(domain: DomainDep, session: SessionDep):
     await domain_service.check_domain(session, domain)
-    return RedirectResponse(router.url_path_for("dashboard"), status_code=303)
+    return RedirectResponse(
+        router.url_path_for("dashboard"), status_code=303
+    )
 
 
 @router.post("/domains/{domain_id}/delete")
 async def remove_domain(domain: DomainDep, session: SessionDep):
     await domain_service.remove_domain(session, domain)
-    return RedirectResponse(router.url_path_for("dashboard"), status_code=303)
+    return RedirectResponse(
+        router.url_path_for("dashboard"), status_code=303
+    )
 
 
 def verify_webhook_token(token: str = "") -> None:

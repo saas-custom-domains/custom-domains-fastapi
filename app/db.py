@@ -32,7 +32,9 @@ SessionDep = Annotated[Session, Depends(get_session)]
 
 def init_db() -> None:
     if engine.url.database:
-        Path(engine.url.database).parent.mkdir(parents=True, exist_ok=True)
+        Path(engine.url.database).parent.mkdir(
+            parents=True, exist_ok=True
+        )
     SQLModel.metadata.create_all(engine)
     with Session(engine) as session:
         if session.exec(select(Tenant)).first() is None:
@@ -50,22 +52,22 @@ def _seed(session: Session) -> None:
                 tenant_id=acme.id,
                 slug="reset-your-robot",
                 title="Reset your robot",
-                body="Hold the power button for ten seconds until the light "
-                "turns blue, then pair it again from the app.",
+                body="Hold the power button for ten seconds until the "
+                "light turns blue, then pair it again from the app.",
             ),
             Article(
                 tenant_id=acme.id,
                 slug="replace-the-battery",
                 title="Replace the battery",
-                body="Turn the robot over, undo the two screws on the battery "
-                "cover and slide the old battery out.",
+                body="Turn the robot over, undo the two screws on the "
+                "battery cover and slide the old battery out.",
             ),
             Article(
                 tenant_id=globex.id,
                 slug="run-payroll",
                 title="Run your first payroll",
-                body="Add your employees, check their tax details and press "
-                "Run payroll before the cut-off on the 25th.",
+                body="Add your employees, check their tax details and "
+                "press Run payroll before the cut-off on the 25th.",
             ),
         ]
     )

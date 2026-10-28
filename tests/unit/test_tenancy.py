@@ -25,12 +25,25 @@ def test_active_domain_serves_its_help_center(client, domains):
 
 
 def test_pending_and_unknown_domains_get_404(client, domains):
-    assert client.get("/", headers={"host": "help.globex.test"}).status_code == 404
-    assert client.get("/", headers={"host": "evil.example"}).status_code == 404
-    assert client.get("/", headers=proxied("evil.example")).status_code == 404
+    assert (
+        client.get(
+            "/", headers={"host": "help.globex.test"}
+        ).status_code
+        == 404
+    )
+    assert (
+        client.get("/", headers={"host": "evil.example"}).status_code
+        == 404
+    )
+    assert (
+        client.get("/", headers=proxied("evil.example")).status_code
+        == 404
+    )
 
 
-def test_dashboard_is_not_reachable_on_a_customer_domain(client, domains):
+def test_dashboard_is_not_reachable_on_a_customer_domain(
+    client, domains
+):
     res = client.post(
         "/domains",
         headers={"host": "help.acme.test"},
@@ -46,28 +59,58 @@ def test_reads_x_served_for_with_the_proxy_token(client, domains):
 
 
 def test_rejects_x_served_for_without_the_right_token(client, domains):
-    spoofed = {"host": "app.helpdock.app", "x-served-for": "help.acme.test"}
+    spoofed = {
+        "host": "app.helpdock.app",
+        "x-served-for": "help.acme.test",
+    }
     assert client.get("/", headers=spoofed).status_code == 403
-    assert client.get("/", headers=proxied("help.acme.test", "nope")).status_code == 403
-    assert client.get("/", headers=proxied("help.acme.test", "")).status_code == 403
+    assert (
+        client.get(
+            "/", headers=proxied("help.acme.test", "nope")
+        ).status_code
+        == 403
+    )
+    assert (
+        client.get(
+            "/", headers=proxied("help.acme.test", "")
+        ).status_code
+        == 403
+    )
 
 
-def test_rejects_everything_when_the_token_is_not_set(client, domains, monkeypatch):
+def test_rejects_everything_when_the_token_is_not_set(
+    client, domains, monkeypatch
+):
     monkeypatch.setattr(settings, "proxy_auth_token", "")
-    assert client.get("/", headers=proxied("help.acme.test", "")).status_code == 403
+    assert (
+        client.get(
+            "/", headers=proxied("help.acme.test", "")
+        ).status_code
+        == 403
+    )
 
 
 def test_health_check_works_on_any_host(client):
-    assert client.get("/up", headers={"host": "10.0.3.17:3000"}).status_code == 200
+    assert (
+        client.get(
+            "/up", headers={"host": "10.0.3.17:3000"}
+        ).status_code
+        == 200
+    )
 
 
 def test_absolute_urls_use_the_customer_domain(client, domains):
     # Fails without as_seen_by_visitor(): url_for() would build
     # "http://app.helpdock.app/articles/..." from the proxy's Host.
     res = client.get("/api/articles", headers=proxied("help.acme.test"))
-    assert res.json()[0]["url"] == "https://help.acme.test/articles/reset-your-robot"
+    assert (
+        res.json()[0]["url"]
+        == "https://help.acme.test/articles/reset-your-robot"
+    )
 
-    page = client.get("/articles/reset-your-robot", headers=proxied("help.acme.test"))
+    page = client.get(
+        "/articles/reset-your-robot", headers=proxied("help.acme.test")
+    )
     assert (
         '<link rel="canonical" href="https://help.acme.test/articles/reset-your-robot">'
         in page.text
@@ -83,7 +126,10 @@ def test_feedback_form_through_the_proxy(client, session, domains):
     )
     assert res.status_code == 303
     # Relative, so the browser stays on the customer's domain.
-    assert res.headers["location"] == "/articles/reset-your-robot?thanks=true"
+    assert (
+        res.headers["location"]
+        == "/articles/reset-your-robot?thanks=true"
+    )
 
     feedback = session.exec(select(Feedback)).one()
     assert feedback.helpful
@@ -91,12 +137,15 @@ def test_feedback_form_through_the_proxy(client, session, domains):
     assert feedback.client_ip == "203.0.113.7"
 
     detail = client.get(
-        "/api/articles/reset-your-robot", headers=proxied("help.acme.test")
+        "/api/articles/reset-your-robot",
+        headers=proxied("help.acme.test"),
     )
     assert detail.json()["helpful"] == 1
 
 
-def test_feedback_only_reaches_the_domains_own_articles(client, domains):
+def test_feedback_only_reaches_the_domains_own_articles(
+    client, domains
+):
     # run-payroll belongs to Globex, so it doesn't exist on Acme's domain.
     res = client.post(
         "/articles/run-payroll/feedback",

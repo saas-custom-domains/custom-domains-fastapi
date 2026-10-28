@@ -1,6 +1,11 @@
 import pytest
 
-from app.hosts import is_reserved_host, is_valid_host, normalize_host, secure_compare
+from app.hosts import (
+    is_reserved_host,
+    is_valid_host,
+    normalize_host,
+    secure_compare,
+)
 
 
 def test_normalize_host():
@@ -15,7 +20,15 @@ def test_valid_hosts(host):
 
 
 @pytest.mark.parametrize(
-    "host", ["acme", "-acme.com", "acme..com", "ac me.com", "https://a.com", ""]
+    "host",
+    [
+        "acme",
+        "-acme.com",
+        "acme..com",
+        "ac me.com",
+        "https://a.com",
+        "",
+    ],
 )
 def test_invalid_hosts(host):
     assert not is_valid_host(host)

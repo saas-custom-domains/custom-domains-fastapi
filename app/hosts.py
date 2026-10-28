@@ -34,10 +34,12 @@ def is_reserved_host(host: str) -> bool:
     if is_app_host(host):
         return True
     domain = normalize_host(settings.app_domain)
-    return bool(domain) and (host == domain or host.endswith(f".{domain}"))
+    return bool(domain) and (
+        host == domain or host.endswith(f".{domain}")
+    )
 
 
 def secure_compare(given: str, expected: str) -> bool:
-    """Constant-time comparison, so a wrong guess doesn't reveal how many
-    leading characters were right."""
+    """Constant-time comparison, so a wrong guess doesn't reveal how
+    many leading characters were right."""
     return hmac.compare_digest(given.encode(), expected.encode())

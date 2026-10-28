@@ -12,7 +12,9 @@ from app.settings import settings
 
 class SaasDomainsError(Exception):
     def __init__(self, status_code: int, body: str) -> None:
-        super().__init__(f"SaaS Custom Domains API {status_code}: {body}")
+        super().__init__(
+            f"SaaS Custom Domains API {status_code}: {body}"
+        )
         self.status_code = status_code
 
 
@@ -23,10 +25,14 @@ def client() -> httpx2.AsyncClient:
     )
 
 
-async def _request(method: str, path: str = "", json: Any = None) -> dict:
+async def _request(
+    method: str, path: str = "", json: Any = None
+) -> dict:
     url = (
-        f"{settings.scd_api_url}/api/v1/accounts/{settings.scd_account_uuid}"
-        f"/upstreams/{settings.scd_upstream_uuid}/custom_domains{path}"
+        f"{settings.scd_api_url}/api/v1"
+        f"/accounts/{settings.scd_account_uuid}"
+        f"/upstreams/{settings.scd_upstream_uuid}"
+        f"/custom_domains{path}"
     )
     async with client() as http:
         res = await http.request(method, url, json=json)
@@ -35,7 +41,9 @@ async def _request(method: str, path: str = "", json: Any = None) -> dict:
     return res.json()
 
 
-async def create_domain(host: str, instructions_recipient: str | None = None) -> dict:
+async def create_domain(
+    host: str, instructions_recipient: str | None = None
+) -> dict:
     body = {"host": host}
     if instructions_recipient:
         # We email this address the exact DNS records to add.

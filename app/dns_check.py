@@ -12,7 +12,9 @@ from app.settings import settings
 
 async def _lookup(host: str, rdtype: str) -> list[str]:
     try:
-        answer = await dns.asyncresolver.resolve(host, rdtype, lifetime=5)
+        answer = await dns.asyncresolver.resolve(
+            host, rdtype, lifetime=5
+        )
     except dns.exception.DNSException:
         return []
     return [normalize_host(r.to_text()) for r in answer]
@@ -23,8 +25,14 @@ async def points_at_us(host: str) -> bool:
     if host.endswith(".localhost"):
         return True
 
-    cnames, ips = await asyncio.gather(_lookup(host, "CNAME"), _lookup(host, "A"))
-    server_ips = {ip.strip() for ip in settings.server_ips.split(",") if ip.strip()}
+    cnames, ips = await asyncio.gather(
+        _lookup(host, "CNAME"), _lookup(host, "A")
+    )
+    server_ips = {
+        ip.strip()
+        for ip in settings.server_ips.split(",")
+        if ip.strip()
+    }
     return normalize_host(settings.cname_target) in cnames or bool(
         server_ips.intersection(ips)
     )

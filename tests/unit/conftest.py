@@ -51,7 +51,9 @@ def domains(session):
     session.add_all(
         [
             CustomDomain(
-                tenant_id=ACME, host="help.acme.test", status=DomainStatus.active
+                tenant_id=ACME,
+                host="help.acme.test",
+                status=DomainStatus.active,
             ),
             CustomDomain(tenant_id=GLOBEX, host="help.globex.test"),
         ]
@@ -61,7 +63,9 @@ def domains(session):
 
 # What SaaS Custom Domains sends: Host is your own hostname, the
 # customer's domain is in X-Served-For.
-def proxied(domain: str, token: str = "test_token", **extra: str) -> dict[str, str]:
+def proxied(
+    domain: str, token: str = "test_token", **extra: str
+) -> dict[str, str]:
     return {
         "host": "app.helpdock.app",
         "x-served-for": domain,

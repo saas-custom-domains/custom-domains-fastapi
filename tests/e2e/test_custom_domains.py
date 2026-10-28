@@ -24,7 +24,9 @@ def test_connect_a_domain_serve_it_through_the_proxy_and_remove_it(
 
     # The mock marks *.test as pointed after ~2s and sends webhooks.
     deadline = time.monotonic() + 15
-    while "Live" not in row.inner_text() and time.monotonic() < deadline:
+    while (
+        "Live" not in row.inner_text() and time.monotonic() < deadline
+    ):
         time.sleep(0.5)
         page.reload()
     expect(row).to_contain_text("Live")
@@ -33,7 +35,9 @@ def test_connect_a_domain_serve_it_through_the_proxy_and_remove_it(
     page.goto(f"http://{host}/")
     expect(page).to_have_title("Acme Robotics Help Center")
     page.get_by_role("link", name="Reset your robot").click()
-    expect(page.get_by_role("heading", name="Reset your robot")).to_be_visible()
+    expect(
+        page.get_by_role("heading", name="Reset your robot")
+    ).to_be_visible()
     # Absolute URLs use the customer's domain, not the proxy's Host.
     expect(page.locator("link[rel=canonical]")).to_have_attribute(
         "href", f"https://{host}/articles/reset-your-robot"
@@ -43,8 +47,12 @@ def test_connect_a_domain_serve_it_through_the_proxy_and_remove_it(
     article_api = f"http://{host}/api/articles/reset-your-robot"
     votes = customer.get(article_api).json()["helpful"]
     page.get_by_role("button", name="Yes").click()
-    expect(page.get_by_role("status")).to_have_text("Thanks for the feedback.")
-    expect(page).to_have_url(f"http://{host}/articles/reset-your-robot?thanks=true")
+    expect(page.get_by_role("status")).to_have_text(
+        "Thanks for the feedback."
+    )
+    expect(page).to_have_url(
+        f"http://{host}/articles/reset-your-robot?thanks=true"
+    )
 
     api = customer.get(article_api).json()
     assert api["url"] == f"https://{host}/articles/reset-your-robot"
@@ -71,16 +79,22 @@ def test_a_domain_that_does_not_point_at_us_stays_pending(page: Page):
 def test_rejects_our_own_domains(page: Page):
     page.goto("/")
     add_domain(page, "acme", "admin.helpdock.app")
-    expect(page.get_by_test_id("tenant-acme").get_by_role("alert")).to_have_text(
-        "That's one of our domains."
-    )
+    expect(
+        page.get_by_test_id("tenant-acme").get_by_role("alert")
+    ).to_have_text("That's one of our domains.")
 
 
 def test_requests_that_skip_the_proxy_cannot_claim_a_domain(app):
-    assert app.get("/", headers={"X-Served-For": "acme.test"}).status_code == 403
+    assert (
+        app.get("/", headers={"X-Served-For": "acme.test"}).status_code
+        == 403
+    )
     wrong = app.get(
         "/",
-        headers={"X-Served-For": "acme.test", "X-SaaS-Domains-Auth-Token": "guess"},
+        headers={
+            "X-Served-For": "acme.test",
+            "X-SaaS-Domains-Auth-Token": "guess",
+        },
     )
     assert wrong.status_code == 403
 
@@ -88,7 +102,10 @@ def test_requests_that_skip_the_proxy_cannot_claim_a_domain(app):
 def test_webhooks_need_the_right_token(app):
     res = app.post(
         "/webhooks/saascustomdomains?token=x",
-        json={"event": "domain_dns_proxy_record_valid", "domain": {"uuid": "x"}},
+        json={
+            "event": "domain_dns_proxy_record_valid",
+            "domain": {"uuid": "x"},
+        },
     )
     assert res.status_code == 401
 

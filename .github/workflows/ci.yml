@@ -24,6 +24,8 @@ jobs:
       - run: docker build .
 
   e2e:
+    # Needs the scd-mock image, which is private for now.
+    if: ${{ !github.event.repository.private }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

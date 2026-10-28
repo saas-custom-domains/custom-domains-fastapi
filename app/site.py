@@ -23,7 +23,9 @@ site = FastAPI(
 
 def get_article(session: Session, tenant: Tenant, slug: str) -> Article:
     article = session.exec(
-        select(Article).where(Article.tenant_id == tenant.id, Article.slug == slug)
+        select(Article).where(
+            Article.tenant_id == tenant.id, Article.slug == slug
+        )
     ).first()
     if article is None:
         raise HTTPException(status_code=404, detail="Article not found")
@@ -31,16 +33,24 @@ def get_article(session: Session, tenant: Tenant, slug: str) -> Article:
 
 
 @site.get("/", response_class=HTMLResponse, name="help_center")
-def help_center(request: Request, tenant: CurrentTenant, session: SessionDep):
+def help_center(
+    request: Request, tenant: CurrentTenant, session: SessionDep
+):
     articles = session.exec(
-        select(Article).where(Article.tenant_id == tenant.id).order_by(Article.id)
+        select(Article)
+        .where(Article.tenant_id == tenant.id)
+        .order_by(Article.id)
     ).all()
     return templates.TemplateResponse(
-        request, "help_center.html", {"tenant": tenant, "articles": articles}
+        request,
+        "help_center.html",
+        {"tenant": tenant, "articles": articles},
     )
 
 
-@site.get("/articles/{slug}", response_class=HTMLResponse, name="article")
+@site.get(
+    "/articles/{slug}", response_class=HTMLResponse, name="article"
+)
 def article_page(
     request: Request,
     slug: str,
@@ -74,7 +84,7 @@ def article_feedback(
         )
     )
     session.commit()
-    # A relative Location keeps the visitor on whatever domain they used.
+    # A relative Location keeps the visitor on the domain they used.
     path = site.url_path_for("article", slug=slug)
     return RedirectResponse(f"{path}?thanks=true", status_code=303)
 
@@ -92,9 +102,13 @@ class ArticleDetail(ArticleOut):
 
 
 @site.get("/api/articles", response_model=list[ArticleOut])
-def list_articles(request: Request, tenant: CurrentTenant, session: SessionDep):
+def list_articles(
+    request: Request, tenant: CurrentTenant, session: SessionDep
+):
     articles = session.exec(
-        select(Article).where(Article.tenant_id == tenant.id).order_by(Article.id)
+        select(Article)
+        .where(Article.tenant_id == tenant.id)
+        .order_by(Article.id)
     ).all()
     return [
         ArticleOut(
@@ -108,7 +122,10 @@ def list_articles(request: Request, tenant: CurrentTenant, session: SessionDep):
 
 @site.get("/api/articles/{slug}", response_model=ArticleDetail)
 def show_article(
-    request: Request, slug: str, tenant: CurrentTenant, session: SessionDep
+    request: Request,
+    slug: str,
+    tenant: CurrentTenant,
+    session: SessionDep,
 ):
     article = get_article(session, tenant, slug)
     votes = dict(

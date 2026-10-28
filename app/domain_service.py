@@ -18,7 +18,10 @@ def _managed() -> bool:
 
 
 async def add_domain(
-    session: Session, tenant_id: int, host: str, dns_contact: str | None = None
+    session: Session,
+    tenant_id: int,
+    host: str,
+    dns_contact: str | None = None,
 ) -> CustomDomain:
     domain = CustomDomain(tenant_id=tenant_id, host=host)
     session.add(domain)
@@ -50,7 +53,9 @@ async def check_domain(session: Session, domain: CustomDomain) -> bool:
         valid = await points_at_us(domain.host)
         # Caddy issues the certificate on the first HTTPS request.
         domain.https_ready = valid
-    domain.status = DomainStatus.active if valid else DomainStatus.pending
+    domain.status = (
+        DomainStatus.active if valid else DomainStatus.pending
+    )
     session.commit()
     return valid
 

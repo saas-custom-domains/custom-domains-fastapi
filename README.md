@@ -87,7 +87,9 @@ A fixed list can't hold your customers' domains, and the middleware doesn't look
 SaaS Custom Domains sends your app's own hostname in `Host`, because that's what your hosting platform routes on, and the customer's domain separately in `X-Served-For`. Starlette builds absolute URLs from `Host`, so this:
 
 ```python
-return RedirectResponse(request.url_for("article", slug=slug), status_code=303)
+return RedirectResponse(
+    request.url_for("article", slug=slug), status_code=303
+)
 ```
 
 sends a visitor on `https://help.acme.com` to `http://app.helpdock.app/articles/...` (in `docker compose`, `http://app:3000/...`), where the customer's article doesn't exist. The same goes for `url_for()` in Jinja templates, canonical links, and URLs in JSON responses.

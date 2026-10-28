@@ -12,22 +12,42 @@ from .conftest import proxied
 
 def test_trusted_host_middleware_rejects_customer_domains():
     plain = FastAPI()
-    plain.add_middleware(TrustedHostMiddleware, allowed_hosts=["app.helpdock.app"])
+    plain.add_middleware(
+        TrustedHostMiddleware, allowed_hosts=["app.helpdock.app"]
+    )
     plain.get("/")(lambda: "ok")
     client = TestClient(plain)
 
     # Behind SaaS Custom Domains, Host is your own hostname: allowed.
-    assert client.get("/", headers=proxied("help.acme.test")).status_code == 200
+    assert (
+        client.get("/", headers=proxied("help.acme.test")).status_code
+        == 200
+    )
     # Your own proxy, a health check by IP, a webhook on an internal name:
     for host in ["help.acme.test", "10.0.3.17:3000", "app:3000"]:
         res = client.get("/", headers={"host": host})
-        assert (res.status_code, res.text) == (400, "Invalid host header")
+        assert (res.status_code, res.text) == (
+            400,
+            "Invalid host header",
+        )
 
 
-def test_our_app_accepts_what_trusted_host_middleware_rejects(client, domains):
-    assert client.get("/", headers={"host": "help.acme.test"}).status_code == 200
-    assert client.get("/up", headers={"host": "10.0.3.17:3000"}).status_code == 200
-    assert client.get("/", headers={"host": "app:3000"}).status_code == 200
+def test_our_app_accepts_what_trusted_host_middleware_rejects(
+    client, domains
+):
+    assert (
+        client.get("/", headers={"host": "help.acme.test"}).status_code
+        == 200
+    )
+    assert (
+        client.get(
+            "/up", headers={"host": "10.0.3.17:3000"}
+        ).status_code
+        == 200
+    )
+    assert (
+        client.get("/", headers={"host": "app:3000"}).status_code == 200
+    )
 
 
 def test_url_for_uses_the_proxys_host():
@@ -39,7 +59,9 @@ def test_url_for_uses_the_proxys_host():
 
     @plain.post("/articles/{slug}/feedback")
     def feedback(request: Request, slug: str):
-        return RedirectResponse(request.url_for("article", slug=slug), status_code=303)
+        return RedirectResponse(
+            request.url_for("article", slug=slug), status_code=303
+        )
 
     res = TestClient(plain).post(
         "/articles/reset/feedback",
@@ -55,7 +77,10 @@ def test_uvicorn_proxy_headers_never_touch_the_host():
 
     @plain.get("/", name="home")
     def home(request: Request):
-        return {"url": str(request.url_for("home")), "client": request.client.host}
+        return {
+            "url": str(request.url_for("home")),
+            "client": request.client.host,
+        }
 
     # Like --forwarded-allow-ips="*", and even with X-Forwarded-Host set to
     # the customer's domain (an option support can turn on).
@@ -63,10 +88,15 @@ def test_uvicorn_proxy_headers_never_touch_the_host():
     res = TestClient(trusting).get(
         "/",
         headers=proxied(
-            "help.acme.test", host="app:3000", **{"x-forwarded-host": "help.acme.test"}
+            "help.acme.test",
+            host="app:3000",
+            **{"x-forwarded-host": "help.acme.test"},
         ),
     )
-    assert res.json() == {"url": "https://app:3000/", "client": "203.0.113.7"}
+    assert res.json() == {
+        "url": "https://app:3000/",
+        "client": "203.0.113.7",
+    }
 
 
 def test_http_exception_in_http_middleware_is_a_500():

@@ -30,15 +30,21 @@ class CustomerDomainMiddleware:
         self.app = app
         self.site = site
 
-    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+    async def __call__(
+        self, scope: Scope, receive: Receive, send: Send
+    ) -> None:
         if scope["type"] != "http" or scope["path"] in UNCHECKED_PATHS:
             await self.app(scope, receive, send)
             return
 
         headers = Headers(scope=scope)
         served_for = headers.get("x-served-for")
-        if served_for is not None and not has_valid_proxy_token(headers):
-            await PlainTextResponse("Forbidden", 403)(scope, receive, send)
+        if served_for is not None and not has_valid_proxy_token(
+            headers
+        ):
+            await PlainTextResponse("Forbidden", 403)(
+                scope, receive, send
+            )
             return
 
         host = normalize_host(served_for or headers.get("host", ""))
@@ -46,7 +52,10 @@ class CustomerDomainMiddleware:
             await self.app(scope, receive, send)
             return
 
-        scope = dict(scope, state={**scope.get("state", {}), "customer_host": host})
+        scope = dict(
+            scope,
+            state={**scope.get("state", {}), "customer_host": host},
+        )
         if served_for is not None:
             scope = as_seen_by_visitor(scope, host, headers)
         await self.site(scope, receive, send)
@@ -58,7 +67,9 @@ def has_valid_proxy_token(headers: Headers) -> bool:
     return bool(expected) and secure_compare(token, expected)
 
 
-def as_seen_by_visitor(scope: Scope, host: str, headers: Headers) -> Scope:
+def as_seen_by_visitor(
+    scope: Scope, host: str, headers: Headers
+) -> Scope:
     """Rewrite a proxied request so request.url, url_for() and
     request.client describe the visitor's request, not the proxy's.
 
@@ -77,18 +88,25 @@ def as_seen_by_visitor(scope: Scope, host: str, headers: Headers) -> Scope:
     return scope
 
 
-def find_tenant_by_active_host(session: Session, host: str) -> Tenant | None:
+def find_tenant_by_active_host(
+    session: Session, host: str
+) -> Tenant | None:
     """The one lookup every customer-facing request depends on. Keep the
     unique index on custom_domain.host."""
     return session.exec(
         select(Tenant)
         .join(CustomDomain)
-        .where(CustomDomain.host == host, CustomDomain.status == DomainStatus.active)
+        .where(
+            CustomDomain.host == host,
+            CustomDomain.status == DomainStatus.active,
+        )
     ).first()
 
 
 def current_tenant(request: Request, session: SessionDep) -> Tenant:
-    tenant = find_tenant_by_active_host(session, request.state.customer_host)
+    tenant = find_tenant_by_active_host(
+        session, request.state.customer_host
+    )
     if tenant is None:
         raise HTTPException(status_code=404, detail="Unknown domain")
     return tenant

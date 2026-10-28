@@ -24,5 +24,12 @@ dev = [
 testpaths = ["tests/unit"]
 pythonpath = ["."]
 
+[tool.ruff]
+# Short lines so the code fits in the guide without scrolling.
+line-length = 72
+
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["E501"]

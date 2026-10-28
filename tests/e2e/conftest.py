@@ -12,7 +12,9 @@ import httpx2
 import pytest
 
 APP_URL = f"http://localhost:{os.environ.get('APP_PORT', '3000')}"
-PROXY_URL = f"http://127.0.0.1:{os.environ.get('SCD_MOCK_PROXY_PORT', '80')}"
+PROXY_URL = (
+    f"http://127.0.0.1:{os.environ.get('SCD_MOCK_PROXY_PORT', '80')}"
+)
 
 
 @pytest.fixture(scope="session")
