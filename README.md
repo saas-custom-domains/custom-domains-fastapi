@@ -102,7 +102,7 @@ If your app needs the customer's domain for redirects, links or absolute URLs, h
 
 ### --forwarded-allow-ips in Docker
 
-The default `--forwarded-allow-ips` trusts only `127.0.0.1`. On Docker Desktop, requests published to your Mac's ports arrive from `127.0.0.1`, so `X-Forwarded-Proto` is trusted and URLs are `https://`. In `docker compose` or production, the proxy connects from another address (`172.x.x.x` here), Uvicorn ignores the headers, `request.url.scheme` is `http` and `request.client.host` is the proxy's IP. `--forwarded-allow-ips="*"` fixes that but lets anyone who can reach your app directly set `X-Forwarded-For`.
+The default `--forwarded-allow-ips` trusts only `127.0.0.1`. If Uvicorn runs directly on your Mac and the proxy runs in Docker Desktop, the proxy's connections arrive from `127.0.0.1`, so `X-Forwarded-Proto` is trusted and URLs are `https://`. In `docker compose` or production, the proxy connects from another address (`172.x.x.x` here), Uvicorn ignores the headers, `request.url.scheme` is `http` and `request.client.host` is the proxy's IP. `--forwarded-allow-ips="*"` fixes that but lets anyone who can reach your app directly set `X-Forwarded-For`.
 
 This app doesn't need either for customer domains, because it trusts the proxy by token rather than by IP. You still need `--forwarded-allow-ips` (or `FORWARDED_ALLOW_IPS`) with your load balancer's addresses for your own hostname, and with Caddy's address if you run the DIY setup in production.
 
