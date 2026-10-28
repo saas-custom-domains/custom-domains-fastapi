@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Helpdock dashboard{% endblock %}
+{% block body %}
+<h1>Helpdock dashboard</h1>
+<p class="muted">Connect a custom domain to each help center.</p>
+
+{% for tenant in tenants %}
+<section data-testid="tenant-{{ tenant.slug }}">
+  <h2>{{ tenant.name }}</h2>
+  <ul>
+    {% for d in domains if d.tenant_id == tenant.id %}
+    <li data-testid="domain-{{ d.host }}">
+      <span class="host">{{ d.host }}</span>
+      <span class="badge {{ d.status.value }}">
+        {%- if d.status.value == "active" -%}
+          {{ "Live" if d.https_ready else "DNS OK, waiting for HTTPS" }}
+        {%- else -%}
+          Waiting for DNS
+        {%- endif -%}
+      </span>
+      <form class="inline" method="post" action="/domains/{{ d.id }}/check" style="margin-left:auto">
+        <button class="link">Check DNS</button>
+      </form>
+      <form class="inline" method="post" action="/domains/{{ d.id }}/delete">
+        <button class="link alert">Remove</button>
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
+  <form method="post" action="/domains">
+    <input type="hidden" name="tenant_id" value="{{ tenant.id }}">
+    <label>Domain <input name="host" placeholder="help.example.com" required></label>
+    <label>Send DNS instructions to <input name="dns_contact" type="email" placeholder="optional"></label>
+    <button>Add domain</button>
+  </form>
+  {% if errors.get(tenant.id) %}
+  <p class="alert" role="alert">{{ errors[tenant.id] }}</p>
+  {% endif %}
+</section>
+{% endfor %}
+{% endblock %}

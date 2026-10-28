@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}{{ tenant.name }} Help Center{% endblock %}
+{% block body %}
+<h1>{{ tenant.name }} Help Center</h1>
+<ul>
+  {% for article in articles %}
+  <li><a href="/articles/{{ article.slug }}">{{ article.title }}</a></li>
+  {% endfor %}
+</ul>
+{% endblock %}

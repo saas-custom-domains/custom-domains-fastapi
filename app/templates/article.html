@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}{{ article.title }} | {{ tenant.name }} Help Center{% endblock %}
+{% block head %}
+  {# Absolute URL: needs the customer's domain, not the proxy's Host. #}
+  <link rel="canonical" href="{{ url_for('article', slug=article.slug) }}">
+{% endblock %}
+{% block body %}
+<p><a href="/">{{ tenant.name }} Help Center</a></p>
+<h1>{{ article.title }}</h1>
+<p>{{ article.body }}</p>
+
+{% if thanks %}
+<p role="status">Thanks for the feedback.</p>
+{% else %}
+<form method="post" action="/articles/{{ article.slug }}/feedback">
+  Was this helpful?
+  <button name="helpful" value="yes">Yes</button>
+  <button name="helpful" value="no">No</button>
+</form>
+{% endif %}
+{% endblock %}
