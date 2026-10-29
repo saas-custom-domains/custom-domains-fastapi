@@ -11,7 +11,7 @@ What's in it:
 - `request.url_for()`, `request.client` and the feedback form work on custom domains behind the proxy (see [url_for() returns your app's hostname](#url_for-returns-your-apps-hostname)).
 - The tenant is a FastAPI dependency (`CurrentTenant`), required by every route of the help center app.
 - A dashboard to add a domain, check its DNS and remove it. Webhooks update the status.
-- Two ways to run HTTPS: SaaS Custom Domains (default), or your own Caddy with on-demand TLS.
+- [SaaS Custom Domains](https://saascustomdomains.com) issues and renews every customer's TLS certificate and proxies their traffic to the app.
 
 ## Run it in 2 minutes
 
@@ -31,17 +31,18 @@ docker compose up --build
 
 The mock is [scd-mock](https://github.com/saas-custom-domains/scd-mock): a local copy of the SaaS Custom Domains API and proxy, so you can try everything without an account.
 
-### Without Docker
+### Run the app outside Docker
 
-You need [uv](https://docs.astral.sh/uv/).
+Keep the mock in Docker and point it at your dev server. You need [uv](https://docs.astral.sh/uv/).
 
 ```bash
+SCD_MOCK_UPSTREAM_HOST=host.docker.internal \
+SCD_MOCK_WEBHOOK_URL=http://host.docker.internal:3000/webhooks/saascustomdomains \
+  docker compose up scd-mock -d
 uv sync
 cp .env.example .env
-uv run fastapi dev
+uv run fastapi dev --port 3000
 ```
-
-Add a domain such as `acme.localhost`, click Check DNS, and open http://acme.localhost:8000. Without the mock, set `DOMAINS_PROVIDER=caddy` in `.env` so adding a domain doesn't call the API; `*.localhost` domains count as pointed at you.
 
 ## How it works
 
@@ -56,10 +57,9 @@ Browser ── help.acme.com ──▶ SaaS Custom Domains ──▶ your FastAP
 | --- | --- |
 | `app/tenancy.py` | `CustomerDomainMiddleware` (token check, host, dispatch) and the `CurrentTenant` dependency |
 | `app/site.py` | The customer's help center: HTML pages, feedback form, JSON API |
-| `app/dashboard.py` | Dashboard, webhook endpoint, Caddy's ask endpoint |
-| `app/domain_service.py` | Add, check and remove domains with either provider |
+| `app/dashboard.py` | Dashboard and webhook endpoint |
+| `app/domain_service.py` | Add, check and remove domains |
 | `app/saas_domains.py` | API client for SaaS Custom Domains (httpx2) |
-| `app/dns_check.py` | Async DNS check with dnspython, for running your own proxy |
 | `app/models.py` | SQLModel tables; `custom_domain.host` has a unique index |
 
 SaaS Custom Domains keeps `Host` and `X-Forwarded-Host` set to your app's own hostname, so your hosting platform routes the request to you, and sends the customer's domain in `X-Served-For`. The middleware only reads `X-Served-For` when `X-SaaS-Domains-Auth-Token` matches `PROXY_AUTH_TOKEN` (compared with `hmac.compare_digest`), and returns 403 otherwise, including when `PROXY_AUTH_TOKEN` isn't set.
@@ -76,7 +76,7 @@ Invalid host header
 
 Behind SaaS Custom Domains that check passes, because `Host` is your own hostname. It fails everywhere else you'd expect a customer domain or an internal name:
 
-- with your own proxy (Caddy), where `Host` is the customer's domain, so every customer gets the 400;
+- in local development, when you open `http://acme.localhost:3000` directly and `Host` is the customer's domain;
 - for health checks from Docker or a load balancer, which use an IP address;
 - for webhooks sent to an internal name, like the mock's `Host: app:3000`.
 
@@ -104,7 +104,7 @@ If your app needs the customer's domain for redirects, links or absolute URLs, h
 
 The default `--forwarded-allow-ips` trusts only `127.0.0.1`. If Uvicorn runs directly on your Mac and the proxy runs in Docker Desktop, the proxy's connections arrive from `127.0.0.1`, so `X-Forwarded-Proto` is trusted and URLs are `https://`. In `docker compose` or production, the proxy connects from another address (`172.x.x.x` here), Uvicorn ignores the headers, `request.url.scheme` is `http` and `request.client.host` is the proxy's IP. `--forwarded-allow-ips="*"` fixes that but lets anyone who can reach your app directly set `X-Forwarded-For`.
 
-This app doesn't need either for customer domains, because it trusts the proxy by token rather than by IP. You still need `--forwarded-allow-ips` (or `FORWARDED_ALLOW_IPS`) with your load balancer's addresses for your own hostname, and with Caddy's address if you run the DIY setup in production.
+This app doesn't need either for customer domains, because it trusts the proxy by token rather than by IP. You still need `--forwarded-allow-ips` (or `FORWARDED_ALLOW_IPS`) with your load balancer's addresses for your own hostname.
 
 ### HTTPException in middleware is a 500
 
@@ -119,20 +119,6 @@ site = FastAPI(dependencies=[Depends(current_tenant)], docs_url=None, ...)
 ```
 
 and routes that need the tenant take `tenant: CurrentTenant`. FastAPI caches a dependency per request, so the lookup runs once. It's a plain `def`, so the database call runs in the threadpool. The feedback form takes the tenant from the domain, never from the form, so a visitor on Acme's domain can't post feedback to another company's article.
-
-## Run your own proxy instead (Caddy)
-
-```bash
-DOMAINS_PROVIDER=caddy docker compose --profile diy up --build
-```
-
-Add `acme.localhost` in the dashboard and click Check DNS, then:
-
-```bash
-curl -k https://acme.localhost/
-```
-
-Caddy asks `/caddy/ask` before issuing a certificate, and only active domains get one. Locally it uses Caddy's internal CA, hence `-k`. The DNS check uses `dns.asyncresolver` and counts a CNAME to `CNAME_TARGET` or an A record in `SERVER_IPS`. In production you'd remove `internal` from the `Caddyfile`, run it on a server with a static IP, start the app with `--forwarded-allow-ips` set to Caddy's address, and then own certificate storage, renewals, rate limits and monitoring yourself.
 
 ## Use it with your SaaS Custom Domains account
 
@@ -166,7 +152,6 @@ CI runs both on every push and once a week, so a new FastAPI, Starlette or Uvico
 | Uvicorn | 0.54.0 |
 | SQLModel | 0.0.48 (SQLAlchemy 2.1.6) |
 | httpx2 | 2.16.0 |
-| dnspython | 2.9.0 |
 | Python | 3.13 |
 
 Last checked: 2026-10-28.

@@ -1,5 +1,5 @@
-"""The owner dashboard, the webhook endpoint and Caddy's ask endpoint.
-All of these live on your own hostnames (APP_HOSTS)."""
+"""The owner dashboard and the webhook endpoint. Both live on your own
+hostnames (APP_HOSTS)."""
 
 import logging
 from typing import Annotated
@@ -27,7 +27,6 @@ from app.hosts import (
 from app.models import CustomDomain, DomainStatus, Tenant
 from app.settings import settings
 from app.templating import templates
-from app.tenancy import find_tenant_by_active_host
 
 log = logging.getLogger(__name__)
 router = APIRouter()
@@ -167,11 +166,3 @@ def webhook(payload: WebhookEvent, session: SessionDep):
             domain.https_ready = True
     session.commit()
     return Response(status_code=204)
-
-
-@router.get("/caddy/ask")
-def caddy_ask(session: SessionDep, domain: str = ""):
-    """Caddy calls this before issuing a certificate on demand
-    (DOMAINS_PROVIDER=caddy). 200 = go ahead, anything else = refuse."""
-    found = find_tenant_by_active_host(session, normalize_host(domain))
-    return Response(status_code=200 if found else 404)

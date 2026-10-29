@@ -193,7 +193,6 @@ name = "custom-domains-fastapi"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
-    { name = "dnspython" },
     { name = "fastapi", extra = ["standard"] },
     { name = "httpx2" },
     { name = "pydantic-settings" },
@@ -209,7 +208,6 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "dnspython", specifier = ">=2.9.0" },
     { name = "fastapi", extras = ["standard"], specifier = ">=0.162.0" },
     { name = "httpx2", specifier = ">=2.16.0" },
     { name = "pydantic-settings", specifier = ">=2.16.2" },

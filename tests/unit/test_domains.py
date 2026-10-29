@@ -175,19 +175,6 @@ def test_remove_keeps_the_row_if_the_api_fails(client, session, api):
     )
 
 
-def test_caddy_mode_needs_no_api(client, session, api, monkeypatch):
-    monkeypatch.setattr(settings, "domains_provider", "caddy")
-    add(client, "help.acme.localhost")
-    domain = session.exec(select(CustomDomain)).one()
-    assert domain.provider_uuid is None
-
-    client.post(f"/domains/{domain.id}/check")
-    session.refresh(domain)
-    assert domain.status == DomainStatus.active
-    assert "Live" in client.get("/").text
-    assert api.requests == []
-
-
 def hook(client, event, uuid="d1", token="hook_token"):
     return client.post(
         f"/webhooks/saascustomdomains?token={token}",
@@ -257,17 +244,3 @@ def test_webhooks_arrive_on_internal_hostnames(client, session):
         json={"event": "domain_created", "domain": {"uuid": "d9"}},
     )
     assert res.status_code == 204
-
-
-def test_caddy_ask(client, domains):
-    assert (
-        client.get("/caddy/ask?domain=help.acme.test").status_code
-        == 200
-    )
-    assert (
-        client.get("/caddy/ask?domain=help.globex.test").status_code
-        == 404
-    )
-    assert (
-        client.get("/caddy/ask?domain=evil.example").status_code == 404
-    )

@@ -18,7 +18,7 @@ def test_help_center_is_hidden_on_the_app_host(client, domains):
 
 
 def test_active_domain_serves_its_help_center(client, domains):
-    # Your own proxy (Caddy) keeps the customer's domain in Host.
+    # Without the proxy (local development), the domain is in Host.
     res = client.get("/", headers={"host": "Help.Acme.test:8443"})
     assert res.status_code == 200
     assert "Acme Robotics Help Center" in res.text

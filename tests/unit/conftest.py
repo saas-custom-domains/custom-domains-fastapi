@@ -6,7 +6,6 @@ os.environ.update(
     DATABASE_URL=f"sqlite:///{tempfile.mkdtemp()}/test.db",
     APP_HOSTS="localhost,app.helpdock.app,app",
     APP_DOMAIN="helpdock.app",
-    DOMAINS_PROVIDER="saascustomdomains",
     SCD_API_URL="http://scd.test",
     SCD_API_TOKEN="api_token",
     SCD_ACCOUNT_UUID="acc",

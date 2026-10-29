@@ -1,5 +1,3 @@
-from typing import Literal
-
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -11,11 +9,6 @@ class Settings(BaseSettings):
     # Customers can't claim this domain or its subdomains.
     app_domain: str = ""
 
-    # "saascustomdomains", or "caddy" if you run your own proxy.
-    domains_provider: Literal["saascustomdomains", "caddy"] = (
-        "saascustomdomains"
-    )
-
     scd_api_url: str = "https://app.saascustomdomains.com"
     scd_api_token: str = ""
     scd_account_uuid: str = ""
@@ -24,10 +17,6 @@ class Settings(BaseSettings):
     proxy_auth_token: str = ""
     # The token on your webhook in the SaaS Custom Domains dashboard.
     scd_webhook_token: str = ""
-
-    # Only for DOMAINS_PROVIDER=caddy: where customers point DNS.
-    cname_target: str = "in.helpdock.app"
-    server_ips: str = ""
 
     database_url: str = "sqlite:///data/app.db"
 

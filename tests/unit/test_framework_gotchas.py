@@ -23,7 +23,8 @@ def test_trusted_host_middleware_rejects_customer_domains():
         client.get("/", headers=proxied("help.acme.test")).status_code
         == 200
     )
-    # Your own proxy, a health check by IP, a webhook on an internal name:
+    # Local development on the domain, a health check by IP, a webhook
+    # on an internal name:
     for host in ["help.acme.test", "10.0.3.17:3000", "app:3000"]:
         res = client.get("/", headers={"host": host})
         assert (res.status_code, res.text) == (
